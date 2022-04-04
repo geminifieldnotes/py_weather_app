@@ -23,11 +23,12 @@ def is_date(string, fuzzy=False):
 
 
 def daily_temp_switch(position):
+    """ Returns the appropriate key based on temperature value index """
     switch = {
         1: "Max",
         2: "Min",
         3: "Mean"
-        }
+    }
     return switch.get(position, None)
 
 
@@ -42,15 +43,10 @@ class WeatherScraper(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         """ Checks if an element contains daily weather data """
-        print("START", tag)
-        for attr in attrs:
-            print("Attribute:", attr)
         if tag == "abbr":
             for attr in attrs:
                 if is_date(attr[1]):
-                    print("Attribute:", attr)
-                    date_holder = parse(attr[1], fuzzy=False).date().strftime('%Y-%m-%d')
-                    print("RYAH", date_holder)
+                    self.date_holder = parse(attr[1], fuzzy=False).date().strftime('%Y-%m-%d')
         elif tag == "td":
             self.is_element_td = True
 
@@ -59,23 +55,26 @@ class WeatherScraper(HTMLParser):
         Matches found hex values to corresponding color names
         and stores to colours dictionary
         """
-        print("Data:", data)
-        # Check if data is a valid Max, Min, or Mean value before inserting to dictionary
-        if data == float and self.is_element_td and self.date_holder is not None and self.td_counter < 3:
-            self.td_counter = self.td_counter + 1
-            self.daily_temps[daily_temp_switch(self.td_counter)] = data
-            """
-            If Max, Min, and Mean are all collected, then insert daily weather data
-            to weather dictionary and restart counter
-            """
-            if self.td_counter == 3:
-                self.weather[self.daily_holder] = self.daily_temps
-                print("NEW HOLDER IS")
-                print(self.weather)
-                self.td_counter = 0
-                self.date_holder = None
-        self.is_element_td = False
+        is_valid_temp = '.' in data and data.replace('.', '', 1).lstrip('-').isdigit()
 
+        if is_valid_temp:
+            # Check if data is a valid Max, Min, or Mean value before inserting to dictionary
+            if self.is_element_td and self.date_holder is not None and self.td_counter < 3:
+                self.td_counter = self.td_counter + 1
+                self.daily_temps[daily_temp_switch(self.td_counter)] = float(data)
+
+                """
+                If Max, Min, and Mean are all collected, then insert daily weather data
+                to weather dictionary and restart counter
+                """
+                if self.td_counter == 3:
+                    self.weather.update({self.date_holder: self.daily_temps})
+                    print(self.weather)
+                    self.td_counter = 0
+                    self.date_holder = None
+                    self.daily_temps = {}
+
+                self.is_element_td = False
 
     def fetch_weather_data(self):
         """ Prints out each entry in colours dictionary """
@@ -86,13 +85,13 @@ class WeatherScraper(HTMLParser):
                                         context=context) as response:
                 html = str(response.read())
 
-            myparser.feed(html)
+            self.feed(html)
         except Exception as e:
-            print('MyHTMLParser:print_colours', e)
+            print('WeatherScraper:fetch_weather_data', e)
 
 
 try:
-    myparser = WeatherScraper()
-    myparser.fetch_weather_data()
+    weather_parser = WeatherScraper()
+    weather_parser.fetch_weather_data()
 except Exception as e:
-    print('MyHTMLParser:main', e)
+    print('WeatherScraper:main', e)
