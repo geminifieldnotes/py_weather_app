@@ -1,8 +1,10 @@
 """ This module contains a WeatherScraper HTML parser class """
-
+import datetime
 from html.parser import HTMLParser
 import urllib.request
 from dateutil.parser import parse
+from datetime import date
+import calendar
 
 import ssl
 
@@ -40,6 +42,7 @@ class WeatherScraper(HTMLParser):
 
     td_counter = 0
     is_element_td = False
+    eom_matcher = None
 
     def handle_starttag(self, tag, attrs):
         """ Checks if an element contains daily weather data """
@@ -47,7 +50,7 @@ class WeatherScraper(HTMLParser):
             if tag == "abbr":
                 for attr in attrs:
                     if is_date(attr[1]):
-                        self.date_holder = parse(attr[1], fuzzy=False).date().strftime('%Y-%m-%d')
+                        self.date_holder = parse(attr[1], fuzzy=False).date()
             elif tag == "td":
                 self.is_element_td = True
         except Exception as e:
@@ -76,22 +79,32 @@ class WeatherScraper(HTMLParser):
                     to weather dictionary and restart counter
                     """
                     if self.td_counter == 3:
-                        self.weather.update({self.date_holder: self.daily_temps})
-                        print(self.weather)
+                        self.weather.update({self.date_holder.strftime('%Y-%m-%d'): self.daily_temps})
+                        self.eom_matcher = self.date_holder  # date placeholder for checking if date is end of month
+
+                        # Reset local variables
                         self.td_counter = 0
                         self.date_holder = None
                         self.daily_temps = {}
+
+                        res = calendar.monthrange(self.eom_matcher.year, self.eom_matcher.month)[1]
+                        if len(self.weather) == res:
+                            print("Reached end of month day")
+                            # Add logic fetch data of previous month and check if date is last available record
+                            # on the website
 
                     self.is_element_td = False
         except Exception as e:
             print('WeatherScraper:handle_data:', e)
 
-    def fetch_weather_data(self):
+    def fetch_weather_data(self, report_date=date.today()):
         """ Records the daily temperatures based on the given date """
         try:
+            print("GIVEN DATE:", report_date)
             context = ssl._create_unverified_context()
-            with urllib.request.urlopen('https://climate.weather.gc.ca/climate_data/daily_data_e.html?StationID=27174'
-                                        '&timeframe=2&StartYear=1840&EndYear=2018&Day=1&Year=2018&Month=5',
+            with urllib.request.urlopen(f"https://climate.weather.gc.ca/climate_data/daily_data_e.html?StationID"
+                                        f"=27174&timeframe=2&StartYear=1840&EndYear=2018&Day=1&Ye"
+                                        f"ar={report_date.year}&Month={report_date.month}",
                                         context=context) as response:
                 html = str(response.read())
 
@@ -102,6 +115,9 @@ class WeatherScraper(HTMLParser):
 
 try:
     weather_parser = WeatherScraper()
-    weather_parser.fetch_weather_data()
+    year = int(input("Year?"))
+    month = int(input("Month?"))
+    weather_parser.fetch_weather_data(datetime.date(year, month, 1))
+    print(weather_parser.weather)
 except Exception as e:
     print('WeatherScraper:main', e)
