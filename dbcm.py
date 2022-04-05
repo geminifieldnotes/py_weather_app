@@ -1,15 +1,16 @@
+"""This model is Database Context Manager"""
 import sqlite3
 
 class DBCM():
-  """Create a context manager DBCM class to manage the database connections"""
+  """DBCM class to manage the database connections"""
   def __init__(self, db_name):
     """Initializes the variables."""
     try:
       self.db_name = db_name
       self.conn = None
-      self.curs = None
+      self.cur = None
     except Exception as error:
-      print("Error: DBCM: Init: ", error)
+      print("Error Init: ", error)
 
   def __enter__(self):
     """Opens a connection and cursor."""
@@ -19,8 +20,8 @@ class DBCM():
     except Exception as error:
       print("Error opening DB:", error)
     try:
-      self.curs = self.conn.cursor()
-      return self.curs
+      self.cur = self.conn.cursor()
+      return self.cur
     except Exception as error:
       print("Error database Enter: ", error)
 
@@ -28,7 +29,7 @@ class DBCM():
     """Commits changes and closes cursor and connection."""
     try:
       self.conn.commit()
-      self.curs.close()
+      self.cur.close()
       self.conn.close()
     except Exception as error:
       print("Error database Exit: ", error)
