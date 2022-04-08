@@ -99,9 +99,6 @@ class WeatherScraper(HTMLParser):
                         else:
                             prev_date = self.eom_matcher.replace(self.eom_matcher.year, self.eom_matcher.month - 1, 1)
                         self.given_date = prev_date
-
-                            # Add logic fetch data of previous month and check if date is last available record
-                            # on the website
         except Exception as e:
             print('WeatherScraper:handle_data:', e)
 
