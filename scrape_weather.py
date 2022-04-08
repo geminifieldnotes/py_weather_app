@@ -1,10 +1,8 @@
 """ This module contains a WeatherScraper HTML parser class """
-import datetime
 from html.parser import HTMLParser
 import urllib.request
 from dateutil.parser import parse
 from datetime import date
-import calendar
 
 import ssl
 
@@ -38,21 +36,28 @@ class WeatherScraper(HTMLParser):
     """ Contains functions to scrape Winnipeg weather data from the Environment Canada website """
     weather = {}
     daily_temps = {}
-    date_holder = None
+    date_holder = None  # holds each day of month upon recording
+    given_date = None  # holds each month transition date
 
     td_counter = 0
     is_element_td = False
     eom_matcher = None
+    has_available_record = False
 
     def handle_starttag(self, tag, attrs):
         """ Checks if an element contains daily weather data """
         try:
+            if tag == "meta":
+                for attr in attrs:
+                    if self.given_date.strftime('%B') in attr[1] and self.given_date.strftime("%Y") in attr[1]:
+                        self.has_available_record = True
             if tag == "abbr":
                 for attr in attrs:
                     if is_date(attr[1]):
                         self.date_holder = parse(attr[1], fuzzy=False).date()
             elif tag == "td":
                 self.is_element_td = True
+
         except Exception as e:
             print('WeatherScraper:handle_starttag:', e)
 
@@ -86,38 +91,52 @@ class WeatherScraper(HTMLParser):
                         self.td_counter = 0
                         self.date_holder = None
                         self.daily_temps = {}
+                        self.is_element_td = False
+                        self.has_available_record = False
 
-                        res = calendar.monthrange(self.eom_matcher.year, self.eom_matcher.month)[1]
-                        if len(self.weather) == res:
-                            print("Reached end of month day")
+                        if self.eom_matcher.month == 1:
+                            prev_date = self.eom_matcher.replace(self.eom_matcher.year - 1, 12, 1)
+                        else:
+                            prev_date = self.eom_matcher.replace(self.eom_matcher.year, self.eom_matcher.month - 1, 1)
+                        self.given_date = prev_date
+
                             # Add logic fetch data of previous month and check if date is last available record
                             # on the website
-
-                    self.is_element_td = False
         except Exception as e:
             print('WeatherScraper:handle_data:', e)
 
     def fetch_weather_data(self, report_date=date.today()):
         """ Records the daily temperatures based on the given date """
         try:
-            print("GIVEN DATE:", report_date)
+            self.given_date = report_date
             context = ssl._create_unverified_context()
             with urllib.request.urlopen(f"https://climate.weather.gc.ca/climate_data/daily_data_e.html?StationID"
                                         f"=27174&timeframe=2&StartYear=1840&EndYear=2018&Day=1&Ye"
                                         f"ar={report_date.year}&Month={report_date.month}",
                                         context=context) as response:
+
                 html = str(response.read())
 
             self.feed(html)
+
+            if report_date == self.given_date and self.has_available_record is False:
+                return
+            elif report_date == self.given_date and self.has_available_record is True:
+                # Still get previous month if monthly record is just missing but available
+                if self.given_date.month == 1:
+                    self.given_date = self.given_date.replace(self.given_date.year - 1, 12, 1)
+                else:
+                    self.given_date = self.given_date.replace(self.given_date.year, self.given_date.month - 1, 1)
+                self.fetch_weather_data(self.given_date)
+            else:
+                self.fetch_weather_data(self.given_date)
         except Exception as e:
             print('WeatherScraper:fetch_weather_data', e)
 
 
 try:
     weather_parser = WeatherScraper()
-    year = int(input("Year?"))
-    month = int(input("Month?"))
-    weather_parser.fetch_weather_data(datetime.date(year, month, 1))
+    weather_parser.fetch_weather_data()
     print(weather_parser.weather)
 except Exception as e:
     print('WeatherScraper:main', e)
