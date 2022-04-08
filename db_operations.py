@@ -1,10 +1,8 @@
 """This model contains a dboperations class with functions to
 initialize and create a database, fetch data and purge data."""
 import sqlite3
-
-from numpy import insert
 from dbcm import DBCM
-from scrape_weather import WeatherScraper
+from test import WeatherScraper
 
 class DBOperations:
   """This class contains functions to
@@ -15,7 +13,7 @@ class DBOperations:
       try:
         cur.execute("""create table if not exists weatherdata
                         ( id integer primary key autoincrement not null,
-                          sample_date text not null,
+                          sample_date text unique,
                           location text not null,
                           max_temp real not null,
                           min_temp real not null,
@@ -30,15 +28,15 @@ class DBOperations:
       sql = """insert into weatherdata (sample_date,location,max_temp,min_temp,avg_temp)
               values (?,?,?,?,?)"""
       try:
-        for dates,datas in dictionary.items():
-          data = []
-          data.append(dates)
-          data.append("Winnipeg, MB")
-          for key, value in datas.items():
-              data.append(value)
-          with DBCM("weather.sqlite") as cur:
+        with DBCM("weather.sqlite") as cur:
+          for dates,datas in dictionary.items():
+            data = []
+            data.append(dates)
+            data.append("Winnipeg, MB")
+            for key, value in datas.items():
+                data.append(value)
             cur.execute(sql, data)
-        print("Added weatherdata successfully.")
+          print("Added weatherdata successfully.")
       except Exception as e:
         print("Error: ",e)
     except Exception as e:
@@ -61,10 +59,10 @@ class DBOperations:
 
 
 weather = WeatherScraper()
-weather.fetch_weather_data()
+# weather.fetch_weather_data()
 
 db = DBOperations()
 db.initialize_db()
 db.save_date(weather.weather)
-db.fetch_date()
+# db.fetch_date()
 # db.purge_data()
