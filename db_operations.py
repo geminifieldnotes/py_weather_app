@@ -42,12 +42,26 @@ class DBOperations:
     except Exception as e:
       print("Error inserting weatherdata.", e)
 
-  def fetch_date(self):
-    """fetch all the data from the DB"""
-    with DBCM("weather.sqlite") as cur:
-      sql = """select * from weatherdata"""
-      for row in cur.execute(sql):
-        print(row)
+  def fetch_data(self, arg1, arg2):
+    """fetch some data from the DB"""
+    if len(arg2)==4:
+        sql = """select sample_date,avg_temp from weatherdata where sample_date>={} and sample_date< {}""".format(arg1,arg2)
+        box_plot_dictionary = {}
+        with DBCM("weather.sqlite") as cur:
+            for row in cur.execute(sql):
+                month = int(row[0][5:7])
+                if month not in box_plot_dictionary:
+                    box_plot_dictionary[month] = [row[1]]
+                else:
+                    box_plot_dictionary[month].append(row[1])
+        return box_plot_dictionary
+    else:
+        sql = """select sample_date,avg_temp from weatherdata where strftime('%Y-%m', sample_date)='{}-{}'""".format(arg1,arg2)
+        line_plot_dictionary = {}
+        with DBCM("weather.sqlite") as cur:
+            for row in cur.execute(sql):
+                line_plot_dictionary[row[0]] = row[1]
+        return line_plot_dictionary
 
   def purge_data(self):
     """purge all the data from the DB"""
@@ -57,12 +71,3 @@ class DBOperations:
         print(row)
       print(" Purge all the data from the DB. ")
 
-
-weather = WeatherScraper()
-# weather.fetch_weather_data()
-
-db = DBOperations()
-db.initialize_db()
-db.save_date(weather.weather)
-# db.fetch_date()
-# db.purge_data()
