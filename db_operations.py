@@ -1,73 +1,81 @@
 """This model contains a dboperations class with functions to
 initialize and create a database, fetch data and purge data."""
-import sqlite3
+import logging
 from dbcm import DBCM
-from test import WeatherScraper
 
 class DBOperations:
-  """This class contains functions to
-  initialize and save data, fetch data and purge data."""
-  def initialize_db(self):
-    """creates the table."""
-    with DBCM("weather.sqlite") as cur:
-      try:
-        cur.execute("""create table if not exists weatherdata
-                        ( id integer primary key autoincrement not null,
-                          sample_date text unique,
-                          location text not null,
-                          max_temp real not null,
-                          min_temp real not null,
-                          avg_temp real not null);""")
-        print("Table created successfully.")
-      except Exception as e:
-            print("Error creating table:", e)
-
-  def save_date(self,dictionary):
-    """insert all the data from the DB"""
-    try:
-      sql = """insert into weatherdata (sample_date,location,max_temp,min_temp,avg_temp)
-              values (?,?,?,?,?)"""
-      try:
+    """This class contains functions to
+    initialize and save data, fetch data and purge data."""
+    def initialize_db(self):
+        """creates the table."""
         with DBCM("weather.sqlite") as cur:
-          for dates,datas in dictionary.items():
-            data = []
-            data.append(dates)
-            data.append("Winnipeg, MB")
-            for key, value in datas.items():
-                data.append(value)
-            cur.execute(sql, data)
-          print("Added weatherdata successfully.")
-      except Exception as e:
-        print("Error: ",e)
-    except Exception as e:
-      print("Error inserting weatherdata.", e)
+            try:
+                cur.execute("""create table if not exists weatherdata
+                                ( id integer primary key autoincrement not null,
+                                  sample_date text unique,
+                                  location text not null,
+                                  max_temp real not null,
+                                  min_temp real not null,
+                                  avg_temp real not null);""")
+                print("Table created successfully.")
+            except Exception as error:
+                logging.warning("Error creating table: %s", error)
 
-  def fetch_data(self, arg1, arg2):
-    """fetch some data from the DB"""
-    if len(arg2)==4:
-        sql = """select sample_date,avg_temp from weatherdata where sample_date>={} and sample_date< {}""".format(arg1,arg2)
-        box_plot_dictionary = {}
-        with DBCM("weather.sqlite") as cur:
-            for row in cur.execute(sql):
-                month = int(row[0][5:7])
-                if month not in box_plot_dictionary:
-                    box_plot_dictionary[month] = [row[1]]
-                else:
-                    box_plot_dictionary[month].append(row[1])
-        return box_plot_dictionary
-    else:
-        sql = """select sample_date,avg_temp from weatherdata where strftime('%Y-%m', sample_date)='{}-{}'""".format(arg1,arg2)
-        line_plot_dictionary = {}
-        with DBCM("weather.sqlite") as cur:
-            for row in cur.execute(sql):
-                line_plot_dictionary[row[0]] = row[1]
-        return line_plot_dictionary
+    def save_date(self,dictionary):
+        """insert all the data from the DB"""
+        try:
+            sql = """insert into weatherdata (sample_date,location,max_temp,min_temp,avg_temp)
+                    values (?,?,?,?,?)"""
+            try:
+                with DBCM("weather.sqlite") as cur:
+                    for date,temp in dictionary.items():
+                        data = []
+                        data.append(date)
+                        data.append("Winnipeg, MB")
+                        for value in temp.items():
+                            data.append(value)
+                        cur.execute(sql, data)
+                    print("Added weatherdata successfully.")
+            except Exception as error:
+                print("Error: ",error)
+        except Exception as error:
+            logging.warning("Error inserting weatherdata: %s", error)
 
-  def purge_data(self):
-    """purge all the data from the DB"""
-    with DBCM("weather.sqlite") as cur:
-      sql= """delete from  weatherdata"""
-      for row in cur.execute(sql):
-        print(row)
-      print(" Purge all the data from the DB. ")
+    def fetch_data(self, arg1, arg2):
+        """fetch some data from the DB"""
+        if len(arg2)==4:
+            sql = """select sample_date,avg_temp from weatherdata
+                      where sample_date>={} and sample_date< {}""".format(arg1,arg2)
+            box_plot_dictionary = {}
+            try:
+                with DBCM("weather.sqlite") as cur:
+                    for row in cur.execute(sql):
+                        month = int(row[0][5:7])
+                        if month not in box_plot_dictionary:
+                            box_plot_dictionary[month] = [row[1]]
+                        else:
+                            box_plot_dictionary[month].append(row[1])
+            except Exception as error:
+                logging.warning(" Organizing line box data for box plot: %s",error)
+            return box_plot_dictionary
+        else:
+            sql = """select sample_date,avg_temp from weatherdata where strftime
+                      ('%Y-%m', sample_date)='{}-{}'""".format(arg1,arg2)
+            line_plot_dictionary = {}
+            try:
+                with DBCM("weather.sqlite") as cur:
+                    for row in cur.execute(sql):
+                        line_plot_dictionary[row[0]] = row[1]
+            except Exception as error:
+                logging.warning(" Organizing line box data for line plot: %s",error)
+            return line_plot_dictionary
 
+    def purge_data(self):
+        """Deletes all the data from the DB"""
+        try:
+            with DBCM("weather.sqlite") as cur:
+                sql= """delete from  weatherdata"""
+                for row in cur.execute(sql):
+                    print(row)
+        except Exception as error:
+            logging.warning(" Delete all the data from the DB: %s",error)
