@@ -8,7 +8,7 @@ class PlotOperations:
     def initialize(self):
         """Initialize the class"""
 
-    def box_plot(self, weather_datas):
+    def box_plot(self, weather_datas, from_year, to_year):
         """Plots  of mean temperatures in a date range (year to year)"""
         data = []
         try:
@@ -19,7 +19,7 @@ class PlotOperations:
 
         try:
             plt.boxplot(data)
-            plt.title(f'Monthly Temperature Distribution for:{START_YEAR} to {END_YEAR}')
+            plt.title(f'Monthly Temperature Distribution for:{from_year} to {to_year}')
             plt.ylabel('Temperature (Celsius)')
             plt.xlabel('Month')
             plt.show()
@@ -46,13 +46,3 @@ class PlotOperations:
             plt.show()
         except Exception as error:
             logging.warning("Error: Create line plot: %s",error)
-
-START_YEAR = '2000'
-END_YEAR = '2022'
-weather_data = DBOperations().fetch_data(START_YEAR, END_YEAR)
-PlotOperations().box_plot(weather_data)
-
-YEAR = '2020'
-MONTH= '06'
-weather_data = DBOperations().fetch_data(YEAR, MONTH)
-PlotOperations().line_plot(weather_data)

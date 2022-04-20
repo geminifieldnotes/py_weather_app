@@ -120,20 +120,14 @@ class WeatherScraper(HTMLParser):
                 return
             elif report_date == self.given_date and self.has_available_record is True:
                 # Still get previous month if monthly record is just missing but available
+                print(f"Processing {report_date.year} {report_date.month}")
                 if self.given_date.month == 1:
                     self.given_date = self.given_date.replace(self.given_date.year - 1, 12, 1)
                 else:
                     self.given_date = self.given_date.replace(self.given_date.year, self.given_date.month - 1, 1)
                 self.fetch_weather_data(self.given_date)
             else:
+                print(f"Processing {report_date.year} {report_date.month}")
                 self.fetch_weather_data(self.given_date)
         except Exception as e:
             print('WeatherScraper:fetch_weather_data', e)
-
-
-try:
-    weather_parser = WeatherScraper()
-    weather_parser.fetch_weather_data()
-    print(weather_parser.weather)
-except Exception as e:
-    print('WeatherScraper:main', e)

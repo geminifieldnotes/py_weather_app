@@ -2,6 +2,7 @@
 initialize and create a database, fetch data and purge data."""
 import logging
 from dbcm import DBCM
+from scrape_weather import WeatherScraper
 
 class DBOperations:
     """This class contains functions to
@@ -33,7 +34,11 @@ class DBOperations:
                         data.append(date)
                         data.append("Winnipeg, MB")
                         for value in temp.items():
-                            data.append(value)
+                            record = iter(value)
+                            temp_dict = dict(zip(record, record))
+                            for key in temp_dict:
+                                record = temp_dict.get(key)
+                                data.append(record)
                         cur.execute(sql, data)
                     print("Added weatherdata successfully.")
             except Exception as error:
@@ -79,3 +84,15 @@ class DBOperations:
                     print(row)
         except Exception as error:
             logging.warning(" Delete all the data from the DB: %s",error)
+
+try:
+    weather = WeatherScraper()
+    weather.fetch_weather_data()
+    print("Finished scraping all available weather records")
+
+    db = DBOperations()
+    db.initialize_db()
+    db.purge_data()
+    db.save_date(weather.weather)
+except Exception as e:
+    print('DBOperations:main', e)
