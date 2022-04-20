@@ -8,7 +8,7 @@ class WeatherProcessor:
         elif user_action == 'D':
             print("ACTION:", user_action)
         else:
-            retry = input(f"{user_action} is an invalid action! Restart?\n\tEnter Y - Yes\n\tEnter any key - No\n")
+            retry = input(f"{user_action} is an invalid action! Restart?\n\t[Y] - Yes\n\t[Any key] - No\n")
             if retry == 'Y':
                 user_action = input(
                     "Select an action:\n\t[D] - Download a full set of weather data\n\t[U] - Update weather data and "
