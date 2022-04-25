@@ -98,6 +98,5 @@ if __name__ == "__main__":
         logger.addHandler(fh)
 
         logger.info("Main Thread Started")
-        WeatherProcessor().main()
     except Exception as e:
         logger.error("main_thread:main: %s", e)
