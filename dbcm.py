@@ -18,7 +18,6 @@ class DBCM():
         """Opens a connection and cursor."""
         try:
             self.conn = sqlite3.connect(self.db_name)
-            print("Opened database successfully.")
         except Exception as error:
             self.logger.error("Error opening DB: %s",error)
         try:

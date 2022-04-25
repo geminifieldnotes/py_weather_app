@@ -1,11 +1,12 @@
 """Handle the creation of box and line plots"""
 import logging
 import matplotlib.pyplot as plt
-from db_operations import DBOperations
+
 
 class PlotOperations:
     """Class for reveiving weather data and ploting"""
     logger = logging.getLogger("main." + __name__)
+
     def initialize(self):
         """Initialize the class"""
 
@@ -16,7 +17,7 @@ class PlotOperations:
             for month in weather_datas:
                 data.append(weather_datas[month])
         except Exception as error:
-            self.logger.error("Error: Organizing line box data: %s",error)
+            self.logger.error("Error: Organizing line box data: %s", error)
 
         try:
             plt.boxplot(data)
@@ -25,8 +26,7 @@ class PlotOperations:
             plt.xlabel('Month')
             plt.show()
         except Exception as error:
-            self.logger.error("Error: Create box plot: %s",error)
-
+            self.logger.error("Error: Create box plot: %s", error)
 
     def line_plot(self, weather_datas):
         """ plot which shows the mean daily temp of a particular month and year"""
@@ -37,7 +37,7 @@ class PlotOperations:
                 dates.append(day)
                 data.append(weather_datas[day])
         except Exception as error:
-            self.logger.error("Error: Organizing line plot data: %s",error)
+            self.logger.error("Error: Organizing line plot data: %s", error)
         try:
             plt.plot(dates, data)
             plt.title('Daily Avg Temperatures')
@@ -46,4 +46,4 @@ class PlotOperations:
             plt.xticks(rotation=45)
             plt.show()
         except Exception as error:
-            self.logger.error("Error: Create line plot: %s",error)
+            self.logger.error("Error: Create line plot: %s", error)

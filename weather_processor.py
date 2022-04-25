@@ -1,14 +1,16 @@
 """ This module contains a WeatherProcessor class """
-import logging
 import logging.handlers
 from db_operations import DBOperations
 from plot_operations import PlotOperations
 
+
 class WeatherProcessor:
     """Presents the user with a menu of choices."""
     logger = logging.getLogger("main." + __name__)
-    def __init__(self, user_action):
+
+    def __init__(self):
         try:
+            user_action = self.prompt_menu()
             if user_action == 'U':
                 print("Updating weather data in progress...")
             elif user_action == 'D':
@@ -28,22 +30,34 @@ class WeatherProcessor:
             else:
                 retry = input(f"{user_action} is an invalid action! Restart?\n\t[Y] - Yes\n\t[Any key] - No\n")
                 if retry == 'Y':
-                    user_action = input(
-                        "Select an action:\n\t[D] - Download a full set of weather data\n\t[U] - Update weather data and "
-                        "download new records\n\t[B] - Generate a box plot with year range\n\t[L] - Generate a monthly "
-                        "line plot\n\t[X] - Exit\n\n").strip()
-                    self.__init__(user_action)
+                    self.__init__()
                 else:
+                    print("Application Exited")
                     return
+
+            restart_action = input(f"Go back to Main Menu?\n\t[Y] - Yes\n\t[Any key] - No\n")
+            if restart_action == 'Y':
+                self.__init__()
+            else:
+                print("Application Exited")
+                return
         except Exception as error:
-            self.logger.error("WeatherProcessor:init: %s",error)
+            self.logger.error("WeatherProcessor:init: %s", error)
+
+    def prompt_menu(self):
+        """ Shows menu and prompts for user selection """
+        try:
+            action = input(
+                "Select an action:\n\t[D] - Download a full set of weather data\n\t[U] - Update weather data and "
+                "download new records\n\t[B] - Generate a box plot with year range\n\t[L] - Generate a monthly "
+                "line plot\n\t[X] - Exit\n\n").strip()
+            return action
+        except Exception as error:
+            self.logger.error("WeatherProcessor:prompt_menu: %s", error)
 
 
 try:
-    action = input("Select an action:\n\t[D] - Download a full set of weather data\n\t[U] - Update weather data and "
-                   "download new records\n\t[B] - Generate a box plot with year range\n\t[L] - Generate a monthly line "
-                   "plot\n\t[X] - Exit\n\n").strip()
-    processor = WeatherProcessor(action)
+    processor = WeatherProcessor()
     input()
 except Exception as e:
     print('WeatherProcessor:main', e)
@@ -63,4 +77,4 @@ if __name__ == "__main__":
         logger.info("Main Thread Started")
         WeatherProcessor().main()
     except Exception as e:
-        logger.error("main_thread:main: %s",e)
+        logger.error("main_thread:main: %s", e)
