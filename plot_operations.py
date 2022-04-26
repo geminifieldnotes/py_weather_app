@@ -1,4 +1,7 @@
-"""Handle the creation of box and line plots"""
+"""
+Handle the creation of box and line plots
+Authors: Xueting Hao, Mariah Garcia
+"""
 import logging
 import matplotlib.pyplot as plt
 

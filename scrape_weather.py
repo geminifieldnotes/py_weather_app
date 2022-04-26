@@ -1,10 +1,13 @@
-""" This module contains a WeatherScraper HTML parser class """
+"""
+This module contains a WeatherScraper HTML parser class
+Authors: Mariah Garcia, Xueting Hao
+"""
 import logging
 from html.parser import HTMLParser
 import urllib.request
-from dateutil.parser import parse
 from datetime import date
 import ssl
+from dateutil.parser import parse
 
 
 def is_date(string, fuzzy=False):
@@ -51,7 +54,8 @@ class WeatherScraper(HTMLParser):
         try:
             if tag == "meta":
                 for attr in attrs:
-                    if self.given_date.strftime('%B') in attr[1] and self.given_date.strftime("%Y") in attr[1]:
+                    if self.given_date.strftime('%B') in attr[1] \
+                            and self.given_date.strftime("%Y") in attr[1]:
                         self.has_available_record = True
             if tag == "abbr":
                 for attr in attrs:
@@ -86,7 +90,8 @@ class WeatherScraper(HTMLParser):
                     """
                     if self.td_counter == 3:
                         self.weather.update({self.date_holder.strftime('%Y-%m-%d'): self.daily_temps})
-                        self.eom_matcher = self.date_holder  # date placeholder for checking if date is end of month
+                        # date placeholder for checking if date is end of month
+                        self.eom_matcher = self.date_holder
 
                         # Reset local variables
                         self.td_counter = 0
@@ -98,7 +103,8 @@ class WeatherScraper(HTMLParser):
                         if self.eom_matcher.month == 1:
                             prev_date = self.eom_matcher.replace(self.eom_matcher.year - 1, 12, 1)
                         else:
-                            prev_date = self.eom_matcher.replace(self.eom_matcher.year, self.eom_matcher.month - 1, 1)
+                            prev_date = self.eom_matcher.replace(self.eom_matcher.year,
+                                                                 self.eom_matcher.month - 1, 1)
                         self.given_date = prev_date
         except Exception as error:
             self.logger.error("WeatherScraper:handle_data: %s", error)
@@ -108,10 +114,11 @@ class WeatherScraper(HTMLParser):
         try:
             self.given_date = report_date
             context = ssl._create_unverified_context()
-            with urllib.request.urlopen(f"https://climate.weather.gc.ca/climate_data/daily_data_e.html?StationID"
-                                        f"=27174&timeframe=2&StartYear=1840&EndYear=2018&Day=1&Ye"
-                                        f"ar={report_date.year}&Month={report_date.month}",
-                                        context=context) as response:
+            with urllib.request.urlopen(
+                    f"https://climate.weather.gc.ca/climate_data/daily_data_e.html?StationID"
+                    f"=27174&timeframe=2&StartYear=1840&EndYear=2018&Day=1&Ye"
+                    f"ar={report_date.year}&Month={report_date.month}",
+                    context=context) as response:
 
                 html = str(response.read())
 
@@ -127,10 +134,11 @@ class WeatherScraper(HTMLParser):
                 if self.given_date.month == 1:
                     self.given_date = self.given_date.replace(self.given_date.year - 1, 12, 1)
                 else:
-                    self.given_date = self.given_date.replace(self.given_date.year, self.given_date.month - 1, 1)
+                    self.given_date = self.given_date.replace(self.given_date.year,
+                                                              self.given_date.month - 1, 1)
                 self.fetch_weather_data(self.given_date, oldest_db_date)
             else:
                 print(f"Processing {report_date.year} {report_date.month}")
                 self.fetch_weather_data(self.given_date, oldest_db_date)
-        except Exception as error:
+        except RuntimeError as error:
             self.logger.error("WeatherScraper:fetch_weather_data: %s", error)

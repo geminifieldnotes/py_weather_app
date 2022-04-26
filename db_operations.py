@@ -1,5 +1,8 @@
-"""This model contains a dboperations class with functions to
-initialize and create a database, fetch data and purge data."""
+"""
+This model contains a dboperations class with functions to
+initialize and create a database, fetch data and purge data.
+Authors: Xueting Hao, Mariah Garcia
+"""
 import datetime
 import logging
 from dbcm import DBCM
@@ -23,7 +26,7 @@ class DBOperations:
                                   min_temp real not null,
                                   avg_temp real not null);""")
                 print("Table created successfully.")
-            except Exception as error:
+            except ConnectionError as error:
                 self.logger.error("Error creating table: %s", error)
 
     def save_date(self, dictionary):
@@ -45,9 +48,9 @@ class DBOperations:
                                 data.append(record)
                         cur.execute(sql, data)
                     print("Added weatherdata successfully.")
-            except Exception as error:
+            except ValueError as error:
                 self.logger.error("Error: %s", error)
-        except Exception as error:
+        except ConnectionError as error:
             self.logger.error("Error inserting weatherdata: %s", error)
 
     def fetch_data(self, arg1, arg2):
@@ -75,7 +78,7 @@ class DBOperations:
                 with DBCM("weather.sqlite") as cur:
                     for row in cur.execute(sql):
                         line_plot_dictionary[row[0]] = row[1]
-            except Exception as error:
+            except ConnectionError as error:
                 self.logger.error("Organizing line box data for line plot: %s", error)
             return line_plot_dictionary
 
@@ -86,7 +89,7 @@ class DBOperations:
                 sql = """delete from weatherdata"""
                 for row in cur.execute(sql):
                     print(row)
-        except Exception as error:
+        except ConnectionError as error:
             self.logger.error("Delete all the data from the DB: %s", error)
 
     def is_empty(self):
@@ -96,14 +99,15 @@ class DBOperations:
             with DBCM("weather.sqlite") as cur:
                 for row in cur.execute(sql):
                     return row[0]
-        except Exception as error:
+        except RuntimeError as error:
             self.logger.error("DBOperations:is_empty: %s", error)
 
     def fetch_all(self, limit):
         """ Fetches all available weather data """
         try:
             if limit:
-                sql = """SELECT * FROM weatherdata ORDER BY sample_date DESC LIMIT {}""".format(limit)
+                sql = """SELECT * FROM weatherdata ORDER BY sample_date DESC LIMIT {}"""\
+                    .format(limit)
             else:
                 sql = """SELECT * FROM weatherdata ORDER BY sample_date DESC"""
 
@@ -136,7 +140,7 @@ class DBOperations:
                         for del_row in cur.execute(sql):
                             self.logger.debug(f"Deleted row: {del_row}")
                     self.update_data()
-        except Exception as error:
+        except RuntimeError as error:
             self.logger.error("DBOperations:update_data: %s", error)
 
 
@@ -150,5 +154,5 @@ try:
         print("Finished scraping all available weather records")
         db.purge_data()
         db.save_date(weather.weather)
-except Exception as e:
+except RuntimeError as e:
     print('DBOperations:main', e)

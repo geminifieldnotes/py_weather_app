@@ -1,5 +1,9 @@
-""" This module contains a WeatherProcessor class """
+"""
+This module contains a WeatherProcessor class
+Authors: Mariah Garcia, Xueting Hao
+"""
 import logging.handlers
+import sys
 from datetime import datetime
 from db_operations import DBOperations
 from plot_operations import PlotOperations
@@ -10,15 +14,15 @@ def export():
     try:
         header, rows = DBOperations.fetch_all(DBOperations(), 0)
 
-        f = open('Weather Data.csv', 'w')
-        f.write(','.join(header) + '\n')
+        file = open('Weather Data.csv', 'w', newline='')
+        file.write(','.join(header) + '\n')
 
         for row in rows:
-            f.write(','.join(str(r).replace(",", "") for r in row) + '\n')
+            file.write(','.join(str(r).replace(",", "") for r in row) + '\n')
 
-        f.close()
-        logger.info(str(len(rows)) + ' rows written successfully to ' + f.name)
-    except Exception as error:
+        file.close()
+        logger.info(f"{str(len(rows))} rows written successfully to {file.name}")
+    except ValueError as error:
         logger.error("WeatherProcessor:export: %s", error)
 
 
@@ -26,11 +30,13 @@ def prompt_menu():
     """ Shows menu and prompts for user selection """
     try:
         action = input(
-            "Select an action:\n\t[D] - Download a full set of weather data\n\t[U] - Update weather data and "
-            "download new records\n\t[B] - Generate a box plot with year range\n\t[L] - Generate a monthly "
-            "line plot\n\t[X] - Exit\n\n").strip()
+            "Select an action:\n\t[D] - Download a full set of weather data\n\t"
+            "[U] - Update weather data and download new records\n\t"
+            "[B] - Generate a box plot with year range\n\t"
+            "[L] - Generate a monthly line plot\n\t"
+            "[X] - Exit\n\n").strip()
         return action.upper()
-    except Exception as error:
+    except ValueError as error:
         logger.error("WeatherProcessor:prompt_menu: %s", error)
 
 
@@ -84,19 +90,21 @@ class WeatherProcessor:
             else:
                 self.restart(user_action, 'action')
 
-            if user_action == 'U' or user_action == 'D' or user_action == 'B' or user_action == 'L':
-                restart_action = input(f"Go back to Main Menu?\n\t[Y] - Yes\n\t[Any key] - No\n").upper()
+            if user_action in ('U', 'D', 'B', 'L'):
+                restart_action = input("Go back to Main Menu?\n\t"
+                                       "[Y] - Yes\n\t[Any key] - No\n").upper()
                 if restart_action == 'Y':
                     self.__init__()
 
             logger.info("Application Exited")
-            exit()
-        except Exception as error:
+            sys.exit()
+        except RuntimeError as error:
             logger.error("WeatherProcessor:init: %s", error)
 
     def restart(self, value, input_type):
         """ Displays the restart menu """
-        retry = input(f"{value} is an invalid {input_type}! Restart?\n\t[Y] - Yes\n\t[Any key] - No\n").upper()
+        retry = input(f"{value} is an invalid {input_type}! Restart?\n\t"
+                      f"[Y] - Yes\n\t[Any key] - No\n").upper()
         if retry == 'Y':
             self.__init__()
         else:
@@ -119,5 +127,5 @@ if __name__ == "__main__":
         logger.info("Main Thread Started")
         processor = WeatherProcessor()
         input()
-    except Exception as e:
+    except BaseException as e:
         logger.error("main_thread:main: %s", e)
