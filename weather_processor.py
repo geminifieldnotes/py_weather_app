@@ -17,7 +17,7 @@ def export():
             f.write(','.join(str(r).replace(",", "") for r in row) + '\n')
 
         f.close()
-        logger.error(str(len(rows)) + ' rows written successfully to ' + f.name)
+        logger.info(str(len(rows)) + ' rows written successfully to ' + f.name)
     except Exception as error:
         logger.error("WeatherProcessor:export: %s", error)
 

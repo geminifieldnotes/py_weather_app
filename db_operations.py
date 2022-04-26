@@ -123,9 +123,19 @@ class DBOperations:
             header, rows = self.fetch_all(1)
             for row in rows:
                 old_date = datetime.datetime.strptime(row[1], '%Y-%m-%d')
+                now_date = datetime.date.today()
 
-                weather.fetch_weather_data(datetime.date.today(), datetime.date(old_date.year, old_date.month, old_date.day))
-                db.save_date(weather.weather)
+                if old_date.year != now_date.year or old_date.month != now_date.month:
+                    weather.fetch_weather_data(now_date,
+                                               datetime.date(old_date.year, old_date.month, 1))
+                    db.save_date(weather.weather)
+                else:
+                    with DBCM("weather.sqlite") as cur:
+                        sql = """DELETE FROM weatherdata WHERE sample_date LIKE '{}-{}%'""".format(
+                            old_date.year, str(old_date.month).rjust(2, '0'))
+                        for del_row in cur.execute(sql):
+                            self.logger.debug(f"Deleted row: {del_row}")
+                    self.update_data()
         except Exception as error:
             self.logger.error("DBOperations:update_data: %s", error)
 
@@ -133,11 +143,11 @@ class DBOperations:
 try:
     weather = WeatherScraper()
     db = DBOperations()
+    db.initialize_db()
 
     if db.is_empty() == 1:
         weather.fetch_weather_data()
         print("Finished scraping all available weather records")
-        db.initialize_db()
         db.purge_data()
         db.save_date(weather.weather)
 except Exception as e:
