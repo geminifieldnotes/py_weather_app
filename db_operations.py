@@ -1,5 +1,6 @@
 """This model contains a dboperations class with functions to
 initialize and create a database, fetch data and purge data."""
+import datetime
 import logging
 from dbcm import DBCM
 from scrape_weather import WeatherScraper
@@ -82,7 +83,7 @@ class DBOperations:
         """Deletes all the data from the DB"""
         try:
             with DBCM("weather.sqlite") as cur:
-                sql = """delete from  weatherdata"""
+                sql = """delete from weatherdata"""
                 for row in cur.execute(sql):
                     print(row)
         except Exception as error:
@@ -96,7 +97,38 @@ class DBOperations:
                 for row in cur.execute(sql):
                     return row[0]
         except Exception as error:
-            self.logger.error("Organizing line box data for line plot: %s", error)
+            self.logger.error("DBOperations:is_empty: %s", error)
+
+    def fetch_all(self, limit):
+        """ Fetches all available weather data """
+        try:
+            if limit:
+                sql = """SELECT * FROM weatherdata ORDER BY sample_date DESC LIMIT {}""".format(limit)
+            else:
+                sql = """SELECT * FROM weatherdata ORDER BY sample_date DESC"""
+
+            with DBCM("weather.sqlite") as cur:
+                cur.execute(sql)
+
+                header = [row[0] for row in cur.description]
+                rows = cur.fetchall()
+
+                return header, rows
+        except Exception as error:
+            self.logger.error("DBOperations:fetch_all: %s", error)
+
+    def update_data(self):
+        """ Fetches new weather data and updates database """
+        try:
+            header, rows = self.fetch_all(1)
+            for row in rows:
+                old_date = datetime.datetime.strptime(row[1], '%Y-%m-%d')
+
+                weather.fetch_weather_data(datetime.date.today(), datetime.date(old_date.year, old_date.month, old_date.day))
+                db.save_date(weather.weather)
+        except Exception as error:
+            self.logger.error("DBOperations:update_data: %s", error)
+
 
 try:
     weather = WeatherScraper()

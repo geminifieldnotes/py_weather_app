@@ -6,6 +6,7 @@ from dateutil.parser import parse
 from datetime import date
 import ssl
 
+
 def is_date(string, fuzzy=False):
     """
     Return whether the string can be interpreted as a date.
@@ -59,7 +60,7 @@ class WeatherScraper(HTMLParser):
             elif tag == "td":
                 self.is_element_td = True
         except Exception as error:
-            self.logger.error("WeatherScraper:handle_starttag: %s",error)
+            self.logger.error("WeatherScraper:handle_starttag: %s", error)
 
     def handle_data(self, data):
         """
@@ -100,9 +101,9 @@ class WeatherScraper(HTMLParser):
                             prev_date = self.eom_matcher.replace(self.eom_matcher.year, self.eom_matcher.month - 1, 1)
                         self.given_date = prev_date
         except Exception as error:
-            self.logger.error("WeatherScraper:handle_data: %s",error)
+            self.logger.error("WeatherScraper:handle_data: %s", error)
 
-    def fetch_weather_data(self, report_date=date.today()):
+    def fetch_weather_data(self, report_date=date.today(), oldest_db_date=None):
         """ Records the daily temperatures based on the given date """
         try:
             self.given_date = report_date
@@ -116,6 +117,8 @@ class WeatherScraper(HTMLParser):
 
             self.feed(html)
 
+            if oldest_db_date and oldest_db_date == report_date:
+                return
             if report_date == self.given_date and self.has_available_record is False:
                 return
             elif report_date == self.given_date and self.has_available_record is True:
@@ -125,9 +128,9 @@ class WeatherScraper(HTMLParser):
                     self.given_date = self.given_date.replace(self.given_date.year - 1, 12, 1)
                 else:
                     self.given_date = self.given_date.replace(self.given_date.year, self.given_date.month - 1, 1)
-                self.fetch_weather_data(self.given_date)
+                self.fetch_weather_data(self.given_date, oldest_db_date)
             else:
                 print(f"Processing {report_date.year} {report_date.month}")
-                self.fetch_weather_data(self.given_date)
+                self.fetch_weather_data(self.given_date, oldest_db_date)
         except Exception as error:
-            self.logger.error("WeatherScraper:fetch_weather_data: %s",error)
+            self.logger.error("WeatherScraper:fetch_weather_data: %s", error)
